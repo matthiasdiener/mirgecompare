@@ -1,3 +1,7 @@
 # mirgecompare
 
-Compare the output fidelity of two different MIRGE-Com runs in VTK file formats.
+Tool to compare the output fidelity of two different MIRGE-Com simulation runs.
+
+Currently supports the following file formats:
+* vtu
+* pvtu
