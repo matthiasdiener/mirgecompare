@@ -1,76 +1,70 @@
 import vtk
 
-CONST_TOLERANCE = 1e-12
-
-# TODO: convert to command line args?
-# read in file names to compare: 
+# TODO: convert to command line args
+# read in files names
 first_file = input("Enter first file name: ") # for testing: fld-wave-eager-0000.vtu, autoignition-000000.pvtu
 second_file = input("Enter second file name: ") # for testing: autoignition-000000-0001.vtu, fld-wave-eager-mpi-000-0000.pvtu
 # TODO: change file paths to match actual mirgecom output directory later ?
 first_file = "examples/" + first_file
 second_file = "examples/" + second_file
 
-# set file type to compare
-file_type = "vtu"
-if first_file[-4:] == "pvtu":
-    file_type = "pvtu"
-
-# verify that two files are of same file type
-if first_file[-4:] != second_file[-4:]:
-    print("Fidelity test failed: Mismatched file types")
-    quit()
-
 # read in tolerance value
 user_tolerance = input("Enter desired comparison tolerance value (default = 1e-12): ")
-if float(user_tolerance) != CONST_TOLERANCE:
-    CONST_TOLERANCE = float(user_tolerance)
 
-# read files 
-if file_type == "vtu":
-    reader1 = vtk.vtkXMLUnstructuredGridReader()
-    reader2 = vtk.vtkXMLUnstructuredGridReader()
-else:
-    reader1 = vtk.vtkXMLPUnstructuredGridReader()
-    reader2 = vtk.vtkXMLPUnstructuredGridReader()
+# read in file type: EXTEND TO OTHER FILE TYPES IN FUTURE
+file_type = input("Enter file type of comparison [vtu, pvtu]: ")
 
-reader1.SetFileName(first_file)
-reader1.Update()
-output1 = reader1.GetOutput()
+# function comparing fidelity of given files
+def compare_files(first_file, second_file, file_type, tolerance = 1e-12):
+    # read files: EXTEND TO OTHER FILE TYPES IN FUTURE
+    if file_type == "vtu":
+        reader1 = vtk.vtkXMLUnstructuredGridReader()
+        reader2 = vtk.vtkXMLUnstructuredGridReader()
+    elif file_type == "pvtu":
+        reader1 = vtk.vtkXMLPUnstructuredGridReader()
+        reader2 = vtk.vtkXMLPUnstructuredGridReader()
+    else:
+        # print("File type not supported")
+        raise ValueError("File type not supported")
 
-reader2.SetFileName(second_file)
-reader2.Update()
-output2 = reader2.GetOutput()
+    reader1.SetFileName(first_file)
+    reader1.Update()
+    output1 = reader1.GetOutput()
 
-# check fidelity
-point_data1 = output1.GetPointData()
-point_data2 = output2.GetPointData()
+    reader2.SetFileName(second_file)
+    reader2.Update()
+    output2 = reader2.GetOutput()
 
-# verify same number of PointData arrays in both files
-if point_data1.GetNumberOfArrays() != point_data2.GetNumberOfArrays():
-    print("Fidelity test failed: Mismatched data array count", "\n", "File 1:", point_data1.GetNumberOfArrays(), 
-                                                               "\n", "File 2:", point_data2.GetNumberOfArrays())
-    quit()
+    # check fidelity
+    point_data1 = output1.GetPointData()
+    point_data2 = output2.GetPointData()
 
-for i in range(point_data1.GetNumberOfArrays()):
-    arr1 = point_data1.GetArray(i)
-    arr2 = point_data2.GetArray(i)
+    # verify same number of PointData arrays in both files
+    if point_data1.GetNumberOfArrays() != point_data2.GetNumberOfArrays():
+        print("File 1:", point_data1.GetNumberOfArrays(), "\n", "File 2:", point_data2.GetNumberOfArrays())
+        raise ValueError("Fidelity test failed: Mismatched data array count")
 
-    # verify both files contain same arrays
-    if point_data1.GetArrayName(i) != point_data2.GetArrayName(i):
-        print("Fidelity test failed: Mismatched data array names", "\n", "File 1:", point_data1.GetArrayName(i), 
-                                                                   "\n", "File 2:", point_data2.GetArrayName(i))
-        quit()
+    for i in range(point_data1.GetNumberOfArrays()):
+        arr1 = point_data1.GetArray(i)
+        arr2 = point_data2.GetArray(i)
 
-    # verify arrays are same sizes in both files
-    if arr1.GetSize() != arr2.GetSize():
-        print("Fidelity test failed: Mismatched data array sizes", "\n", "File 1, DataArray", i, ":", arr1.GetSize(), 
-                                                                   "\n", "File 2, DataArray", i, ":", arr2.GetSize())
-        quit()
+        # verify both files contain same arrays
+        if point_data1.GetArrayName(i) != point_data2.GetArrayName(i):
+            print("File 1:", point_data1.GetArrayName(i), "\n", "File 2:", point_data2.GetArrayName(i))
+            raise ValueError("Fidelity test failed: Mismatched data array names")
 
-    # verity individual values w/in given tolerance
-    for j in range(arr1.GetSize()):
-        if (arr1.GetValue(j) - arr2.GetValue(j)) > CONST_TOLERANCE: 
-            print("Fidelity test failed: Mismatched data array values with tolerance", CONST_TOLERANCE)
-            quit()
+        # verify arrays are same sizes in both files
+        if arr1.GetSize() != arr2.GetSize():
+            print("File 1, DataArray", i, ":", arr1.GetSize(), "\n", "File 2, DataArray", i, ":", arr2.GetSize())
+            raise ValueError("Fidelity test failed: Mismatched data array sizes")
 
-print("Fidelity test completed successfully.")
+        # verify individual values w/in given tolerance
+        for j in range(arr1.GetSize()):
+            if (arr1.GetValue(j) - arr2.GetValue(j)) > tolerance: 
+                print("Tolerance:", tolerance)
+                raise ValueError("Fidelity test failed: Mismatched data array values with given tolerance")
+
+    print("Fidelity test completed successfully.")
+
+# call comparison function to run fidelity check on given files
+compare_files(first_file, second_file, file_type, user_tolerance)
