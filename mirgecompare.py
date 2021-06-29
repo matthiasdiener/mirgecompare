@@ -20,24 +20,6 @@ user_tolerance = 1e-12
 if args.tolerance:
     user_tolerance = args.tolerance
 
-# ===================================================================================================
-
-# TO REPLACE
-
-# read in files names
-# first_file = input("Enter first file name: ") # for testing: fld-wave-eager-0000.vtu, autoignition-000000.pvtu
-# second_file = input("Enter second file name: ") # for testing: autoignition-000000-0001.vtu, fld-wave-eager-mpi-000-0000.pvtu
-# first_file = "examples/" + first_file
-# second_file = "examples/" + second_file
-
-# # read in tolerance value
-# user_tolerance = input("Enter desired comparison tolerance value (default = 1e-12): ")
-
-# # read in file type: EXTEND TO OTHER FILE TYPES IN FUTURE
-# file_type = input("Enter file type of comparison [vtu, pvtu]: ")
-
-# ===================================================================================================
-
 # function comparing fidelity of given files
 def compare_files(first_file, second_file, file_type, tolerance = 1e-12):
     # read files: EXTEND TO OTHER FILE TYPES IN FUTURE
