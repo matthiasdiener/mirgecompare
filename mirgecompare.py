@@ -1,27 +1,6 @@
-import vtk
-import argparse
+def compare_files_vtu(first_file, second_file, file_type, tolerance = 1e-12):
+    import vtk
 
-# read in file and comparison info from command line
-parser = argparse.ArgumentParser(description = 'Process files to perform fidelity check')
-parser.add_argument('files', nargs = 2, type = str)
-parser.add_argument('file_type', type = str)
-parser.add_argument('--tolerance', type = float)
-args = parser.parse_args();
-
-first_file = args.files[0]  # for testing: fld-wave-eager-0000.vtu, autoignition-000000.pvtu
-second_file = args.files[1] # for testing: autoignition-000000-0001.vtu, fld-wave-eager-mpi-000-0000.pvtu
-# TODO: change file paths to match actual mirgecom output directory later ?
-first_file = "examples/" + first_file
-second_file = "examples/" + second_file
-
-file_type = args.file_type
-
-user_tolerance = 1e-12
-if args.tolerance:
-    user_tolerance = args.tolerance
-
-# function comparing fidelity of given files
-def compare_files(first_file, second_file, file_type, tolerance = 1e-12):
     # read files: EXTEND TO OTHER FILE TYPES IN FUTURE
     if file_type == "vtu":
         reader1 = vtk.vtkXMLUnstructuredGridReader()
@@ -72,5 +51,27 @@ def compare_files(first_file, second_file, file_type, tolerance = 1e-12):
 
     print("Fidelity test completed successfully with tolerance", tolerance)
 
-# call comparison function to run fidelity check on given files
-compare_files(first_file, second_file, file_type, user_tolerance)
+if __name__ == "__main__":
+    import argparse
+
+    # read in file and comparison info from command line
+    parser = argparse.ArgumentParser(description = 'Process files to perform fidelity check')
+    parser.add_argument('files', nargs = 2, type = str)
+    parser.add_argument('file_type', type = str)
+    parser.add_argument('--tolerance', type = float)
+    args = parser.parse_args();
+
+    first_file = args.files[0]  # for testing: fld-wave-eager-0000.vtu, autoignition-000000.pvtu
+    second_file = args.files[1] # for testing: autoignition-000000-0001.vtu, fld-wave-eager-mpi-000-0000.pvtu
+    # TODO: change file paths to match actual mirgecom output directory later ?
+    first_file = "examples/" + first_file
+    second_file = "examples/" + second_file
+
+    file_type = args.file_type
+
+    user_tolerance = 1e-12
+    if args.tolerance:
+        user_tolerance = args.tolerance
+
+    # call comparison function to run fidelity check on given files
+    compare_files_vtu(first_file, second_file, file_type, user_tolerance)
