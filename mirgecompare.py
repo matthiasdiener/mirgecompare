@@ -1,16 +1,13 @@
-def compare_files_vtu(first_file, second_file, file_type, tolerance = 1e-12):
+def compare_files_vtu(first_file, second_file, tolerance = 1e-12):
     import vtk
 
-    # read files: EXTEND TO OTHER FILE TYPES IN FUTURE
+    # read files:
     if file_type == "vtu":
         reader1 = vtk.vtkXMLUnstructuredGridReader()
         reader2 = vtk.vtkXMLUnstructuredGridReader()
-    elif file_type == "pvtu":
+    else:
         reader1 = vtk.vtkXMLPUnstructuredGridReader()
         reader2 = vtk.vtkXMLPUnstructuredGridReader()
-    else:
-        # print("File type not supported")
-        raise ValueError("File type not supported")
 
     reader1.SetFileName(first_file)
     reader1.Update()
@@ -51,6 +48,81 @@ def compare_files_vtu(first_file, second_file, file_type, tolerance = 1e-12):
 
     print("Fidelity test completed successfully with tolerance", tolerance)
 
+class XdmfReader():
+    def __init__(self, filename): 
+        import xml.etree.ElementTree as ET
+
+        tree = ET.parse(filename)
+        root = tree.getroot()
+
+        domains = tuple(root)
+        self.domain = domains[0]
+        # TODO: add functionality for multiple grids/grid types ?
+        self.grids = tuple(self.domain)
+        self.uniform_grid = self.grids[0]
+
+    def get_topology(self):
+        connectivity = None
+
+        for a in self.uniform_grid:
+            if a.tag == "Topology":
+                connectivity = a
+
+        # TODO: what kind of error is appropriate to raise here?
+        if connectivity == None:
+            raise ValueError("File is missing grid connectivity data") 
+
+        return connectivity
+
+    def get_geometry(self):
+        geometry = None
+
+        for a in self.uniform_grid:
+            if a.tag == "Geometry":
+                geometry = a
+        
+        # TODO: what kind of error is appropriate to raise here?
+        if geometry == None:
+            raise ValueError("File is missing grid node location data") 
+
+        return geometry
+    
+    def read_data_item(self, data_item):
+        # CURRENTLY DOES NOT SUPPORT 'DataItem' THAT STORES VALUES DIRECTLY
+
+        # check that data stored as separate hdf5 file
+        if data_item.get("Format") != "HDF":
+            raise TypeError("Data stored in unrecognized format")
+        
+        # get corresponding hdf5 file
+        source_info = data_item.text
+        split_source_info = source_info.partition(":")
+
+        h5_filename = split_source_info[0]
+        # TODO: change file name to match actual mirgecom output directory later ?
+        h5_filename = "examples/" + h5_filename
+        h5_datapath = split_source_info[2]
+
+        # read data from corresponding hdf5 file
+        import h5py
+
+        f = h5py.File(h5_filename, 'r')
+        source_data = f[h5_datapath]
+
+        return source_data
+
+def compare_files_xdmf(first_file, second_file, tolerance = 1e-12):
+    # TODO: write xdmf comparison w/ XdmfReader
+
+    # compare Topology [same TopologyType, same # of values, values w/in tolerance]
+
+    # compare Geometry [same GeometryType, same # of values, values w/in tolerance]
+
+    # compare other Attributes [same number of extra attributes, same AttributeType, same name, same # of values, values w/in tolerance]
+
+    print("Fidelity test completed successfully with tolerance", tolerance)
+
+# run fidelity check
 if __name__ == "__main__":
     import argparse
 
@@ -73,5 +145,11 @@ if __name__ == "__main__":
     if args.tolerance:
         user_tolerance = args.tolerance
 
-    # call comparison function to run fidelity check on given files
-    compare_files_vtu(first_file, second_file, file_type, user_tolerance)
+    # use appropriate comparison function for file type
+    # EXTEND TO MORE FILE TYPES IN FUTURE
+    if file_type == "vtu" or "pvtu":
+        compare_files_vtu(first_file, second_file, user_tolerance)
+    elif file_type == "xdmf" or "xmf":
+        compare_files_xdmf(first_file, second_file, user_tolerance)
+    else:
+        raise TypeError()("File type not supported")
