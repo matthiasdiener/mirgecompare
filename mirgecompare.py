@@ -1,4 +1,4 @@
-def compare_files_vtu(first_file, second_file, tolerance = 1e-12):
+def compare_files_vtu(first_file, second_file, file_type, tolerance = 1e-12):
     import vtk
 
     # read files:
@@ -133,8 +133,8 @@ if __name__ == "__main__":
     parser.add_argument('--tolerance', type = float)
     args = parser.parse_args();
 
-    first_file = args.files[0]  # for testing: fld-wave-eager-0000.vtu, autoignition-000000.pvtu
-    second_file = args.files[1] # for testing: autoignition-000000-0001.vtu, fld-wave-eager-mpi-000-0000.pvtu
+    first_file = args.files[0]  # for testing: fld-wave-eager-0000.vtu, autoignition-000000.pvtu, visualizer_xdmf_box_2d.xmf
+    second_file = args.files[1] # for testing: autoignition-000000-0001.vtu, fld-wave-eager-mpi-000-0000.pvtu, visualizer_xdmf_simplex_2d.xmf
     # TODO: change file paths to match actual mirgecom output directory later ?
     first_file = "examples/" + first_file
     second_file = "examples/" + second_file
@@ -145,10 +145,10 @@ if __name__ == "__main__":
     if args.tolerance:
         user_tolerance = args.tolerance
 
-    # use appropriate comparison function for file type
     # EXTEND TO MORE FILE TYPES IN FUTURE
+    # use appropriate comparison function for file type
     if file_type == "vtu" or "pvtu":
-        compare_files_vtu(first_file, second_file, user_tolerance)
+        compare_files_vtu(first_file, second_file, file_type, user_tolerance)
     elif file_type == "xdmf" or "xmf":
         compare_files_xdmf(first_file, second_file, user_tolerance)
     else:
