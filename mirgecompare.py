@@ -42,11 +42,11 @@ def compare_files_vtu(first_file, second_file, file_type, tolerance = 1e-12):
 
         # verify individual values w/in given tolerance
         for j in range(arr1.GetSize()):
-            if (arr1.GetValue(j) - arr2.GetValue(j)) > tolerance: 
+            if abs(arr1.GetValue(j) - arr2.GetValue(j)) > tolerance: 
                 print("Tolerance:", tolerance)
                 raise ValueError("Fidelity test failed: Mismatched data array values with given tolerance")
 
-    print("Fidelity test completed successfully with tolerance", tolerance)
+    print("VTU Fidelity test completed successfully with tolerance", tolerance)
 
 class XdmfReader():
     def __init__(self, filename): 
@@ -112,15 +112,102 @@ class XdmfReader():
         return source_data
 
 def compare_files_xdmf(first_file, second_file, tolerance = 1e-12):
-    # TODO: write xdmf comparison w/ XdmfReader
+    # read files
+    file_reader1 = XdmfReader(first_file)
+    file_reader2 = XdmfReader(second_file)
 
-    # compare Topology [same TopologyType, same # of values, values w/in tolerance]
+    # check same number of grids
+    if len(file_reader1.grids) != len(file_reader2.grids):
+        print("File 1:", len(file_reader1.grids), "\n", "File 2:", len(file_reader2.grids))
+        raise ValueError("Fidelity test failed: Mismatched grid count")
+    
+    # check same number of cells in grid
+    if len(file_reader1.uniform_grid) != len(file_reader2.uniform_grid):
+        print("File 1:", len(file_reader1.uniform_grid), "\n", "File 2:", len(file_reader2.uniform_grid))
+        raise ValueError("Fidelity test failed: Mismatched cell count in uniform grid")
 
-    # compare Geometry [same GeometryType, same # of values, values w/in tolerance]
+    # compare Topology: 
+    top1 = file_reader1.get_topology()
+    top2 = file_reader2.get_topology()
 
-    # compare other Attributes [same number of extra attributes, same AttributeType, same name, same # of values, values w/in tolerance]
+    # check TopologyType
+    if top1.get("TopologyType") != top2.get("TopologyType"):
+        print("File 1:", top1.get("TopologyType"), "\n", "File 2:", top2.get("TopologyType"))
+        raise ValueError("Fidelity test failed: Mismatched topology type")
+    
+    # check number of connectivity values
+    connectivities1 = file_reader1.read_data_item(tuple(top1)[0])
+    connectivities2 = file_reader2.read_data_item(tuple(top2)[0])
 
-    print("Fidelity test completed successfully with tolerance", tolerance)
+    if len(connectivities1) != len(connectivities2):
+        print("File 1:", len(connectivities1), "\n", "File 2:", len(connectivities2))
+        raise ValueError("Fidelity test failed: Mismatched connectivities count")
+
+    # check connectivity values w/in tolerance
+    for i in range(len(connectivities1)):
+        for j in range(len(connectivities1[i])):
+            if abs(connectivities1[i][j] - connectivities2[i][j]) > int(tolerance):
+                print("Tolerance:", tolerance)
+                raise ValueError("Fidelity test failed: Mismatched connectivity values with given tolerance")
+
+    # compare Geometry:
+    geo1 = file_reader1.get_geometry()
+    geo2 = file_reader2.get_geometry()
+
+    # check GeometryType
+    if geo1.get("GeometryType") != geo2.get("GeometryType"):
+        print("File 1:", geo1.get("GeometryType"), "\n", "File 2:", geo2.get("GeometryType"))
+        raise ValueError("Fidelity test failed: Mismatched geometry type")
+
+    # check number of node values
+    nodes1 = file_reader1.read_data_item(tuple(geo1)[0])
+    nodes2 = file_reader2.read_data_item(tuple(geo2)[0])
+
+    if len(nodes1) != len(nodes2):
+        print("File 1:", len(nodes1), "\n", "File 2:", len(nodes2))
+        raise ValueError("Fidelity test failed: Mismatched nodes count")
+
+    # check node values w/in tolerance
+    for i in range(len(nodes1)):
+        for j in range(len(nodes1[i])):
+            if abs(nodes1[i][j] - nodes2[i][j]) > tolerance:
+                print("Tolerance:", tolerance)
+                raise ValueError("Fidelity test failed: Mismatched node values with given tolerance")
+
+    # compare other Attributes:
+    for i in range(len(file_reader1.uniform_grid)):
+        curr_cell1 = file_reader1.uniform_grid[i]
+        curr_cell2 = file_reader2.uniform_grid[i]
+
+        # skip already checked cells
+        if curr_cell1.tag == "Geometry" or curr_cell1.tag == "Topology":
+            continue
+
+        # check AttributeType
+        if curr_cell1.get("AttributeType") != curr_cell2.get("AttributeType"):
+            print("File 1:", curr_cell1.get("AttributeType"), "\n", "File 2:", curr_cell2.get("AttributeType"))
+            raise ValueError("Fidelity test failed: Mismatched cell type")
+
+        # check Attribtue name
+        if curr_cell1.get("Name") != curr_cell2.get("Name"):
+            print("File 1:", curr_cell1.get("Name"), "\n", "File 2:", curr_cell2.get("Name"))
+            raise ValueError("Fidelity test failed: Mismatched cell name")
+
+        # check number of Attribute values
+        values1 = file_reader1.read_data_item(tuple(curr_cell1)[0])
+        values2 = file_reader2.read_data_item(tuple(curr_cell2)[0])
+
+        if len(values1) != len(values2):
+            print("File 1,", curr_cell1.get("Name"), ":", len(values1), "\n", "File 2,", curr_cell2.get("Name"), ":", len(values2))
+            raise ValueError("Fidelity test failed: Mismatched data values count")
+
+        # check values w/in tolerance
+        for i in range(len(values1)):
+            if abs(values1[i] - values2[i]) > tolerance:
+                print("Tolerance:", tolerance, "\n", "Cell:", curr_cell1.get("Name"))
+                raise ValueError("Fidelity test failed: Mismatched data values with given tolerance")
+
+    print("XDMF Fidelity test completed successfully with tolerance", tolerance)
 
 # run fidelity check
 if __name__ == "__main__":
@@ -147,9 +234,9 @@ if __name__ == "__main__":
 
     # EXTEND TO MORE FILE TYPES IN FUTURE
     # use appropriate comparison function for file type
-    if file_type == "vtu" or "pvtu":
+    if file_type == "vtu" or file_type == "pvtu":
         compare_files_vtu(first_file, second_file, file_type, user_tolerance)
-    elif file_type == "xdmf" or "xmf":
+    elif file_type == "xdmf" or file_type == "xmf":
         compare_files_xdmf(first_file, second_file, user_tolerance)
     else:
         raise TypeError()("File type not supported")
