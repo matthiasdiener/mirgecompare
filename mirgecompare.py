@@ -48,6 +48,15 @@ def compare_files_vtu(first_file, second_file, file_type, tolerance = 1e-12):
 
     print("VTU Fidelity test completed successfully with tolerance", tolerance)
 
+class Hdf5Reader():
+    def __init__(self, filename):
+        import h5py
+
+        self.file_obj = h5py.File(filename, 'r')
+    
+    def read_specific_data(self, datapath):
+        return self.file_obj[datapath]
+
 class XdmfReader():
     def __init__(self, filename): 
         import xml.etree.ElementTree as ET
@@ -86,7 +95,7 @@ class XdmfReader():
             raise ValueError("File is missing grid node location data") 
 
         return geometry
-    
+            
     def read_data_item(self, data_item):
         # CURRENTLY DOES NOT SUPPORT 'DataItem' THAT STORES VALUES DIRECTLY
 
@@ -104,12 +113,10 @@ class XdmfReader():
         h5_datapath = split_source_info[2]
 
         # read data from corresponding hdf5 file
-        import h5py
+        h5_reader = Hdf5Reader(h5_filename)
+        return h5_reader.read_specific_data(h5_datapath)
 
-        f = h5py.File(h5_filename, 'r')
-        source_data = f[h5_datapath]
-
-        return source_data
+import numpy as np
 
 def compare_files_xdmf(first_file, second_file, tolerance = 1e-12):
     # read files
@@ -139,16 +146,16 @@ def compare_files_xdmf(first_file, second_file, tolerance = 1e-12):
     connectivities1 = file_reader1.read_data_item(tuple(top1)[0])
     connectivities2 = file_reader2.read_data_item(tuple(top2)[0])
 
-    if len(connectivities1) != len(connectivities2):
-        print("File 1:", len(connectivities1), "\n", "File 2:", len(connectivities2))
-        raise ValueError("Fidelity test failed: Mismatched connectivities count")
+    connectivities1 = np.array(connectivities1)
+    connectivities2 = np.array(connectivities2)
 
-    # check connectivity values w/in tolerance
-    for i in range(len(connectivities1)):
-        for j in range(len(connectivities1[i])):
-            if abs(connectivities1[i][j] - connectivities2[i][j]) > int(tolerance):
-                print("Tolerance:", tolerance)
-                raise ValueError("Fidelity test failed: Mismatched connectivity values with given tolerance")
+    if connectivities1.shape != connectivities2.shape:
+        print("File 1:", connectivities1.shape, "\n", "File 2:", connectivities2.shape)
+        raise ValueError("Fidelity test failed: Mismatched connectivities count")
+    
+    if not np.allclose(connectivities1, connectivities2, atol = tolerance):
+        print("Tolerance:", tolerance)
+        raise ValueError("Fidelity test failed: Mismatched connectivity values with given tolerance")
 
     # compare Geometry:
     geo1 = file_reader1.get_geometry()
@@ -163,16 +170,16 @@ def compare_files_xdmf(first_file, second_file, tolerance = 1e-12):
     nodes1 = file_reader1.read_data_item(tuple(geo1)[0])
     nodes2 = file_reader2.read_data_item(tuple(geo2)[0])
 
-    if len(nodes1) != len(nodes2):
-        print("File 1:", len(nodes1), "\n", "File 2:", len(nodes2))
-        raise ValueError("Fidelity test failed: Mismatched nodes count")
+    nodes1 = np.array(nodes1)
+    nodes2 = np.array(nodes2)
 
-    # check node values w/in tolerance
-    for i in range(len(nodes1)):
-        for j in range(len(nodes1[i])):
-            if abs(nodes1[i][j] - nodes2[i][j]) > tolerance:
-                print("Tolerance:", tolerance)
-                raise ValueError("Fidelity test failed: Mismatched node values with given tolerance")
+    if nodes1.shape != nodes2.shape:
+        print("File 1:", nodes1.shape, "\n", "File 2:", nodes2.shape)
+        raise ValueError("Fidelity test failed: Mismatched nodes count")
+    
+    if not np.allclose(nodes1, nodes2, atol = tolerance):
+        print("Tolerance:", tolerance)
+        raise ValueError("Fidelity test failed: Mismatched node values with given tolerance")
 
     # compare other Attributes:
     for i in range(len(file_reader1.uniform_grid)):
@@ -209,6 +216,82 @@ def compare_files_xdmf(first_file, second_file, tolerance = 1e-12):
 
     print("XDMF Fidelity test completed successfully with tolerance", tolerance)
 
+def compare_files_hdf5(first_file, second_file, tolerance = 1e-12):
+    file_reader1 = Hdf5Reader(first_file)
+    file_reader2 = Hdf5Reader(second_file)
+
+    f1 = file_reader1.file_obj
+    f2 = file_reader2.file_obj
+
+    objects1 = list(f1.keys()) 
+    objects2 = list(f2.keys())
+
+    # check number of Grids
+    if len(objects1) != len(objects2):
+        print("File 1:", len(objects1), "\n", "File 2:", len(objects2))
+        raise ValueError("Fidelity test failed: Mismatched grid count")
+
+    # loop through Grids
+    for i in range(len(objects1)):
+        obj_name1 = objects1[i] 
+        obj_name2 = objects2[i]
+
+        if obj_name1 != obj_name2:
+            print("File 1:", obj_name1, "\n", "File 2:", obj_name2)
+            raise ValueError("Fidelity test failed: Mismatched grid names")
+
+        curr_o1 = list(f1[obj_name1]) 
+        curr_o2 = list(f2[obj_name2])
+
+        if len(curr_o1) != len(curr_o2):
+            print("File 1,", obj_name1, ":", len(curr_o1), "\n", "File 2,", obj_name2, ":", len(curr_o2))
+            raise ValueError("Fidelity test failed: Mismatched group count")
+
+        # loop through Groups
+        for j in range(len(curr_o1)):
+            subobj_name1 = curr_o1[j] 
+            subobj_name2 = curr_o2[j]
+
+            if subobj_name1 != subobj_name2:
+                print("File 1:", subobj_name1, "\n", "File 2:", subobj_name2)
+                raise ValueError("Fidelity test failed: Mismatched group names")
+
+            subpath1 = obj_name1 + "/" + subobj_name1
+            subpath2 = obj_name2 + "/" + subobj_name2
+
+            data_arrays_list1 = list(f1[subpath1])
+            data_arrays_list2 = list(f2[subpath2])
+
+            if len(data_arrays_list1) != len(data_arrays_list2):
+                print("File 1,", subobj_name1, ":", len(data_arrays_list1), "\n", "File 2,", subobj_name2, ":", len(data_arrays_list2))
+                raise ValueError("Fidelity test failed: Mismatched data list count")
+
+            # loop through data arrays
+            for k in range(len(data_arrays_list1)):
+                curr_listname1 = data_arrays_list1[k] 
+                curr_listname2 = data_arrays_list2[k]
+
+                if curr_listname1 != curr_listname2:
+                    print("File 1:", curr_listname1, "\n", "File 2:", curr_listname2)
+                    raise ValueError("Fidelity test failed: Mismatched data list names")
+
+                curr_listname1 = subpath1 + "/" + curr_listname1
+                curr_listname2 = subpath2 + "/" + curr_listname2
+
+                curr_datalist1 = np.array(list(f1[curr_listname1]))
+                curr_datalist2 = np.array(list(f2[curr_listname2]))
+
+                if curr_datalist1.shape != curr_datalist2.shape:
+                    print("File 1,", curr_listname1, ":", curr_datalist1.shape, "\n", 
+                          "File 2,", curr_listname2, ":", curr_datalist2.shape)
+                    raise ValueError("Fidelity test failed: Mismatched data list size")
+                
+                if not np.allclose(curr_datalist1, curr_datalist2, atol = tolerance):
+                    print("Tolerance:", tolerance, "\n", "Data List:", curr_listname1)
+                    raise ValueError("Fidelity test failed: Mismatched data values with given tolerance")
+
+    print("HDF5 Fidelity test completed successfully with tolerance", tolerance)
+
 # run fidelity check
 if __name__ == "__main__":
     import argparse
@@ -232,11 +315,12 @@ if __name__ == "__main__":
     if args.tolerance:
         user_tolerance = args.tolerance
 
-    # EXTEND TO MORE FILE TYPES IN FUTURE
     # use appropriate comparison function for file type
     if file_type == "vtu" or file_type == "pvtu":
         compare_files_vtu(first_file, second_file, file_type, user_tolerance)
     elif file_type == "xdmf" or file_type == "xmf":
         compare_files_xdmf(first_file, second_file, user_tolerance)
+    elif file_type == "hdf5" or file_type == "h5":
+        compare_files_hdf5(first_file, second_file, user_tolerance)
     else:
         raise TypeError()("File type not supported")
