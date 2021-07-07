@@ -8,6 +8,4 @@ Currently supports the following file formats:
 * vtu
 * pvtu
 * xdmf
-
-In progress:
 * hdf5
