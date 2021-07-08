@@ -17,6 +17,9 @@ jobs:
     - uses: actions/checkout@v2
     - name: Run mirgecompare examples for vtu, pvtu, xdmf, hdf5 files
       run: |
+        python -m pip install numpy
+        python -m pip install vtk
+        python -m pip install h5py
         python ./mirgecompare.py fld-wave-eager-0000.vtu autoignition-000000-0001.vtu vtu
         python ./mirgecompare.py fld-wave-eager-mpi-000-0000.pvtu autoignition-000000.pvtu pvtu
         python ./mirgecompare.py visualizer_xdmf_box_2d.xmf visualizer_xdmf_simplex_2d.xmf xdmf
