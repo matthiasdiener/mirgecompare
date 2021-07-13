@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Xdmf xmlns:xi="http://www.w3.org/2001/XInclude" Version="3.0">
+  <Domain>
+    <Grid Name="Group_00000" GridType="Uniform">
+      <Topology TopologyType="Triangle" NumberOfElements="6400">
+        <DataItem ItemType="Uniform" Dimensions="6400 3" NumberType="Int" Precision="8" Endian="Little" Format="HDF" Name="Connectivity">visualizer_xdmf_simplex_2d.h5:/Grid/Group_00000/Connectivity</DataItem>
+      </Topology>
+      <Geometry GeometryType="XYZ">
+        <DataItem ItemType="Uniform" Dimensions="6000 3" NumberType="Float" Precision="8" Endian="Little" Format="HDF" Name="Nodes">visualizer_xdmf_simplex_2d.h5:/Grid/Group_00000/Nodes</DataItem>
+      </Geometry>
+      <Attribute Name="f_r" Center="Node" AttributeType="Scalar">
+        <DataItem ItemType="Uniform" Dimensions="6000" NumberType="Float" Precision="8" Endian="Little" Format="HDF">visualizer_xdmf_simplex_2d.h5:/Grid/Group_00000/f_r</DataItem>
+      </Attribute>
+      <Attribute Name="f_i" Center="Node" AttributeType="Scalar">
+        <DataItem ItemType="Uniform" Dimensions="6000" NumberType="Float" Precision="8" Endian="Little" Format="HDF">visualizer_xdmf_simplex_2d.h5:/Grid/Group_00000/f_i</DataItem>
+      </Attribute>
+    </Grid>
+  </Domain>
+</Xdmf>
