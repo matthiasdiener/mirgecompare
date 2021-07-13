@@ -58,6 +58,8 @@ class Hdf5Reader():
         return self.file_obj[datapath]
 
 class XdmfReader():
+    # CURRENTLY DOES NOT SUPPORT MULTIPLE Grids
+
     def __init__(self, filename): 
         import xml.etree.ElementTree as ET
 
@@ -66,7 +68,6 @@ class XdmfReader():
 
         domains = tuple(root)
         self.domain = domains[0]
-        # TODO: add functionality for multiple grids/grid types ?
         self.grids = tuple(self.domain)
         self.uniform_grid = self.grids[0]
 
@@ -77,7 +78,6 @@ class XdmfReader():
             if a.tag == "Topology":
                 connectivity = a
 
-        # TODO: what kind of error is appropriate to raise here?
         if connectivity == None:
             raise ValueError("File is missing grid connectivity data") 
 
@@ -90,7 +90,6 @@ class XdmfReader():
             if a.tag == "Geometry":
                 geometry = a
         
-        # TODO: what kind of error is appropriate to raise here?
         if geometry == None:
             raise ValueError("File is missing grid node location data") 
 
@@ -108,7 +107,7 @@ class XdmfReader():
         split_source_info = source_info.partition(":")
 
         h5_filename = split_source_info[0]
-        # TODO: change file name to match actual mirgecom output directory later ?
+        # TODO: change file name to match actual mirgecom output directory later
         h5_filename = "examples/" + h5_filename
         h5_datapath = split_source_info[2]
 
@@ -299,17 +298,16 @@ if __name__ == "__main__":
     # read in file and comparison info from command line
     parser = argparse.ArgumentParser(description = 'Process files to perform fidelity check')
     parser.add_argument('files', nargs = 2, type = str)
-    parser.add_argument('file_type', type = str)
     parser.add_argument('--tolerance', type = float)
     args = parser.parse_args();
 
-    first_file = args.files[0]  # for testing: fld-wave-eager-0000.vtu, autoignition-000000.pvtu, visualizer_xdmf_box_2d.xmf
-    second_file = args.files[1] # for testing: autoignition-000000-0001.vtu, fld-wave-eager-mpi-000-0000.pvtu, visualizer_xdmf_simplex_2d.xmf
-    # TODO: change file paths to match actual mirgecom output directory later ?
+    first_file = args.files[0]  
+    second_file = args.files[1] 
+    # TODO: change file paths to match actual mirgecom output directory later
     first_file = "examples/" + first_file
     second_file = "examples/" + second_file
 
-    file_type = args.file_type
+    file_type = first_file.partition(".")[2]
 
     user_tolerance = 1e-12
     if args.tolerance:
@@ -318,9 +316,9 @@ if __name__ == "__main__":
     # use appropriate comparison function for file type
     if file_type == "vtu" or file_type == "pvtu":
         compare_files_vtu(first_file, second_file, file_type, user_tolerance)
-    elif file_type == "xdmf" or file_type == "xmf":
+    elif file_type == "xmf":
         compare_files_xdmf(first_file, second_file, user_tolerance)
-    elif file_type == "hdf5" or file_type == "h5":
+    elif file_type == "h5":
         compare_files_hdf5(first_file, second_file, user_tolerance)
     else:
         raise TypeError()("File type not supported")
