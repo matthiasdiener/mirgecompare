@@ -294,6 +294,7 @@ def compare_files_hdf5(first_file, second_file, tolerance = 1e-12):
 # run fidelity check
 if __name__ == "__main__":
     import argparse
+    import os
 
     # read in file and comparison info from command line
     parser = argparse.ArgumentParser(description = 'Process files to perform fidelity check')
@@ -307,7 +308,8 @@ if __name__ == "__main__":
     first_file = "examples/" + first_file
     second_file = "examples/" + second_file
 
-    file_type = first_file.partition(".")[2]
+    file_split = os.path.splitext(first_file)[1]
+    file_type = file_split[1:]
 
     user_tolerance = 1e-12
     if args.tolerance:
@@ -321,4 +323,4 @@ if __name__ == "__main__":
     elif file_type == "h5":
         compare_files_hdf5(first_file, second_file, user_tolerance)
     else:
-        raise TypeError()("File type not supported")
+        raise TypeError("File type not supported")
