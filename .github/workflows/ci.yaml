@@ -36,7 +36,31 @@ jobs:
         python -m pip install numpy
         python -m pip install vtk
         python -m pip install h5py
-        python ./mirgecompare.py fld-wave-eager-0000.vtu autoignition-000000-0001.vtu || exit 1
-        python ./mirgecompare.py fld-wave-eager-mpi-000-0000.pvtu autoignition-000000.pvtu || exit 1
-        python ./mirgecompare.py visualizer_xdmf_box_2d.xmf visualizer_xdmf_simplex_2d.xmf || exit 1
-        python ./mirgecompare.py visualizer_xdmf_box_2d.h5 visualizer_xdmf_simplex_2d.h5 || exit 1
+        if python ./mirgecompare.py fld-wave-eager-0000.vtu autoignition-000000-0001.vtu ; then
+          echo "Fidelity check wrongly succeeded"
+          exit 1
+        else
+          echo "Fidelity check rightly failed"
+          exit 0
+        fi
+        if python ./mirgecompare.py fld-wave-eager-mpi-000-0000.pvtu autoignition-000000.pvtu ; then
+          echo "Fidelity check wrongly succeeded"
+          exit 1
+        else
+          echo "Fidelity check rightly failed"
+          exit 0
+        fi
+        if python ./mirgecompare.py visualizer_xdmf_box_2d.xmf visualizer_xdmf_simplex_2d.xmf ; then
+          echo "Fidelity check wrongly succeeded"
+          exit 1
+        else
+          echo "Fidelity check rightly failed"
+          exit 0
+        fi
+        if python ./mirgecompare.py visualizer_xdmf_box_2d.h5 visualizer_xdmf_simplex_2d.h5 ; then
+          echo "Fidelity check wrongly succeeded"
+          exit 1
+        else
+          echo "Fidelity check rightly failed"
+          exit 0
+        fi
