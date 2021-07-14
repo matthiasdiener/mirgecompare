@@ -9,13 +9,13 @@ on:
   - cron: '5 0 * * *'
 
 jobs:
-  examples:
-    name: Examples
+  success_cases:
+    name: Success Cases
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v2
-    - name: Run mirgecompare examples for vtu, pvtu, xdmf, hdf5 files
+    - name: Run same mirgecompare example files for vtu, pvtu, xdmf, hdf5 types
       run: |
         python -m pip install numpy
         python -m pip install vtk
@@ -25,8 +25,20 @@ jobs:
         python ./mirgecompare.py autoignition-000000.pvtu autoignition-000000.pvtu
         python ./mirgecompare.py visualizer_xdmf_box_2d.xmf visualizer_xdmf_box_2d.xmf
         python ./mirgecompare.py visualizer_xdmf_simplex_2d.h5 visualizer_xdmf_simplex_2d.h5
+  
+  fail_cases:
+    name: Fail Cases
+    runs-on: ubuntu-latest
 
-       python ./mirgecompare.py fld-wave-eager-0000.vtu autoignition-000000-0001.vtu || exit 1
-       python ./mirgecompare.py fld-wave-eager-mpi-000-0000.pvtu autoignition-000000.pvtu || exit 1
-       python ./mirgecompare.py visualizer_xdmf_box_2d.xmf visualizer_xdmf_simplex_2d.xmf || exit 1
-       python ./mirgecompare.py visualizer_xdmf_box_2d.h5 visualizer_xdmf_simplex_2d.h5 || exit 1
+    steps:
+    - uses: actions/checkout@v2
+    - name: Run differing mirgecompare examples for vtu, pvtu, xdmf, hdf5 files
+      run: |
+        python -m pip install numpy
+        python -m pip install vtk
+        python -m pip install h5py
+
+        python ./mirgecompare.py fld-wave-eager-0000.vtu autoignition-000000-0001.vtu || exit 1
+        python ./mirgecompare.py fld-wave-eager-mpi-000-0000.pvtu autoignition-000000.pvtu || exit 1
+        python ./mirgecompare.py visualizer_xdmf_box_2d.xmf visualizer_xdmf_simplex_2d.xmf || exit 1
+        python ./mirgecompare.py visualizer_xdmf_box_2d.h5 visualizer_xdmf_simplex_2d.h5 || exit 1
