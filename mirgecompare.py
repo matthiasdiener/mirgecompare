@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+
+
 def compare_files_vtu(first_file, second_file, file_type, tolerance = 1e-12):
     import vtk
 
@@ -304,12 +307,9 @@ if __name__ == "__main__":
 
     first_file = args.files[0]  
     second_file = args.files[1] 
-    # TODO: change file paths to match actual mirgecom output directory later
-    first_file = "examples/" + first_file
-    second_file = "examples/" + second_file
 
     file_split = os.path.splitext(first_file)[1]
-    file_type = file_split[1:]
+    file_type = file_split[1:]  # remove dot
 
     user_tolerance = 1e-12
     if args.tolerance:
