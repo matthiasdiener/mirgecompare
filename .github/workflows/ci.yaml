@@ -17,13 +17,11 @@ jobs:
     - uses: actions/checkout@v2
     - name: Run same mirgecompare example files for vtu, pvtu, xdmf, hdf5 types
       run: |
-        python -m pip install numpy
-        python -m pip install vtk
-        python -m pip install h5py
-        python ./mirgecompare.py autoignition-000000-0001.vtu autoignition-000000-0001.vtu 
-        python ./mirgecompare.py autoignition-000000.pvtu autoignition-000000.pvtu
-        python ./mirgecompare.py visualizer_xdmf_box_2d.xmf visualizer_xdmf_box_2d.xmf
-        python ./mirgecompare.py visualizer_xdmf_simplex_2d.h5 visualizer_xdmf_simplex_2d.h5
+        python -m pip install numpy vtk h5py
+        python ./mirgecompare.py examples/autoignition-000000-0001.vtu examples/autoignition-000000-0001.vtu 
+        python ./mirgecompare.py examples/autoignition-000000.pvtu examples/autoignition-000000.pvtu
+        python ./mirgecompare.py examples/visualizer_xdmf_box_2d.xmf examples/visualizer_xdmf_box_2d.xmf
+        python ./mirgecompare.py examples/visualizer_xdmf_simplex_2d.h5 examples/visualizer_xdmf_simplex_2d.h5
   
   fail_cases:
     name: Fail Cases
@@ -33,31 +31,29 @@ jobs:
     - uses: actions/checkout@v2
     - name: Run differing mirgecompare examples for vtu, pvtu, xdmf, hdf5 files
       run: |
-        python -m pip install numpy
-        python -m pip install vtk
-        python -m pip install h5py
-        if python ./mirgecompare.py fld-wave-eager-0000.vtu autoignition-000000-0001.vtu ; then
+        python -m pip install numpy vtk h5py
+        if python ./mirgecompare.py examples/fld-wave-eager-0000.vtu examples/autoignition-000000-0001.vtu ; then
           echo "Fidelity check wrongly succeeded"
           exit 1
         else
           echo "Fidelity check rightly failed"
           exit 0
         fi
-        if python ./mirgecompare.py fld-wave-eager-mpi-000-0000.pvtu autoignition-000000.pvtu ; then
+        if python ./mirgecompare.py examples/fld-wave-eager-mpi-000-0000.pvtu examples/autoignition-000000.pvtu ; then
           echo "Fidelity check wrongly succeeded"
           exit 1
         else
           echo "Fidelity check rightly failed"
           exit 0
         fi
-        if python ./mirgecompare.py visualizer_xdmf_box_2d.xmf visualizer_xdmf_simplex_2d.xmf ; then
+        if python ./mirgecompare.py examples/visualizer_xdmf_box_2d.xmf examples/visualizer_xdmf_simplex_2d.xmf ; then
           echo "Fidelity check wrongly succeeded"
           exit 1
         else
           echo "Fidelity check rightly failed"
           exit 0
         fi
-        if python ./mirgecompare.py visualizer_xdmf_box_2d.h5 visualizer_xdmf_simplex_2d.h5 ; then
+        if python ./mirgecompare.py examples/visualizer_xdmf_box_2d.h5 examples/visualizer_xdmf_simplex_2d.h5 ; then
           echo "Fidelity check wrongly succeeded"
           exit 1
         else
